@@ -40,7 +40,7 @@ end run
 
 在 **System Preferences** -> **Keyboard** -> **Shortcuts** -> **Services**
 
-选择我们创建好的 '**OpenTerminal**'，设置你想要的快捷键，比如我设置了`⌥+⌘+T`
+选择我们创建好的`OpenTerminal`，设置你想要的快捷键，比如我设置了`⌥+⌘+T`
 
 到此，设置完成。
 
