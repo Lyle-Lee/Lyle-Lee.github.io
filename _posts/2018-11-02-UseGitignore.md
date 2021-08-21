@@ -2,13 +2,12 @@
 layout:     post
 title:      使用 .gitignore 忽略 Git 仓库中的文件
 subtitle:   .gitignore 文件在Git中的使用
-date:       2017-02-22
-author:     BY
+date:       2018-11-2
+author:     Lyle
 header-img: img/post-bg-debug.png
 catalog: true
 tags:
     - Mac
-    - 终端
     - Git
     - Github
 ---
@@ -39,7 +38,7 @@ github上整理了一些常用需要的项目中需要忽略的文件配置，�
 
 	https://github.com/github/gitignore.git
 	
-与 Xcode 相关的三个文件
+例：与 Xcode 相关的三个文件
 
 - Xcode.gitignore
 - Objective-C.gitignore

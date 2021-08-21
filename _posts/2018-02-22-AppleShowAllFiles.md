@@ -2,13 +2,13 @@
 layout:     post
 title:      Mac 文件的隐藏与显示
 subtitle:   使用终端 显示/隐藏 文件
-date:       2017-02-22
-author:     BY
+date:       2018-02-22
+author:     Lyle
 header-img: img/post-bg-debug.png
 catalog: true
 tags:
     - Mac
-    - 终端
+    - Terminal
 ---
 
 > 让 Finder 显示隐藏文件和文件夹
