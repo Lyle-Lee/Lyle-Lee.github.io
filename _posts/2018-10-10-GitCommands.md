@@ -15,7 +15,7 @@ tags:
 
 # GitHub创建并关联远程仓库
 
-	echo "# 项目名" >> README.md
+	echo "# project name" >> README.md
 	git init
 	git add README.md
 	git commit -m "first commit"
