@@ -26,6 +26,7 @@ tags:
 torch.autograd.Variable.register_hook
 ```
 
+
 - `register_forward_hook`，针对`nn.Module`对象
 
 ```python
@@ -33,6 +34,7 @@ torch.autograd.Variable.register_hook
 
 torch.nn.Module.register_forward_hook
 ```
+
 
 - `register_backward_hook`，也是针对`nn.Module`对象
 
@@ -46,7 +48,7 @@ torch.nn.Module.register_backward_hook
 
 那么为什么要设计Hook呢，或者说在什么场景下我们需要使用Hook呢？
 
-<li>举个简单的例子，<a href="https://www.codecogs.com/eqnedit.php?latex=\inline&space;{\color{Black}&space;\boldsymbol{x}&space;\in&space;\mathbb{R}^2}" target="_blank"><img src="https://latex.codecogs.com/svg.latex?\inline&space;{\color{Black}&space;\boldsymbol{x}&space;\in&space;\mathbb{R}^2}" title="{\color{Black} \boldsymbol{x} \in \mathbb{R}^2}" /></a>，<a href="https://www.codecogs.com/eqnedit.php?latex=\inline&space;{\color{Black}&space;\boldsymbol{y}&space;=&space;\boldsymbol{x}&space;&plus;&space;2}" target="_blank"><img src="https://latex.codecogs.com/svg.latex?\inline&space;{\color{Black}&space;\boldsymbol{y}&space;=&space;\boldsymbol{x}&space;&plus;&space;2}" title="{\color{Black} \boldsymbol{y} = \boldsymbol{x} + 2}" /></a>，<a href="https://www.codecogs.com/eqnedit.php?latex=\inline&space;{\color{Black}&space;z&space;=&space;\frac{1}{2}\boldsymbol{y}^\top\boldsymbol{y}}" target="_blank"><img src="https://latex.codecogs.com/svg.latex?\inline&space;{\color{Black}&space;z&space;=&space;\frac{1}{2}\boldsymbol{y}^\top\boldsymbol{y}}" title="{\color{Black} z = \frac{1}{2}\boldsymbol{y}^\top\boldsymbol{y}}" /></a></li>
+<p>举个简单的例子，<a href="https://www.codecogs.com/eqnedit.php?latex=\inline&space;{\color{Black}&space;\boldsymbol{x}&space;\in&space;\mathbb{R}^2}" target="_blank"><img src="https://latex.codecogs.com/svg.latex?\inline&space;{\color{Black}&space;\boldsymbol{x}&space;\in&space;\mathbb{R}^2}" title="{\color{Black} \boldsymbol{x} \in \mathbb{R}^2}" /></a>，<a href="https://www.codecogs.com/eqnedit.php?latex=\inline&space;{\color{Black}&space;\boldsymbol{y}&space;=&space;\boldsymbol{x}&space;&plus;&space;2}" target="_blank"><img src="https://latex.codecogs.com/svg.latex?\inline&space;{\color{Black}&space;\boldsymbol{y}&space;=&space;\boldsymbol{x}&space;&plus;&space;2}" title="{\color{Black} \boldsymbol{y} = \boldsymbol{x} + 2}" /></a>，<a href="https://www.codecogs.com/eqnedit.php?latex=\inline&space;{\color{Black}&space;z&space;=&space;\frac{1}{2}\boldsymbol{y}^\top\boldsymbol{y}}" target="_blank"><img src="https://latex.codecogs.com/svg.latex?\inline&space;{\color{Black}&space;z&space;=&space;\frac{1}{2}\boldsymbol{y}^\top\boldsymbol{y}}" title="{\color{Black} z = \frac{1}{2}\boldsymbol{y}^\top\boldsymbol{y}}" /></a></p>
 
 你想通过梯度下降法求最小值，在Pytorch里面很容易实现，你只需要：
 
@@ -62,7 +64,7 @@ z.backward()
 x.data -= lr * x.grad.data
 ```
 
-<li>但问题是，如果想求中间变量<a href="https://www.codecogs.com/eqnedit.php?latex=\inline&space;{\color{Black}&space;\boldsymbol{y}}" target="_blank"><img src="https://latex.codecogs.com/svg.latex?\inline&space;{\color{Black}&space;\boldsymbol{y}}" title="{\color{Black} \boldsymbol{y}}" /></a>的梯度，系统会返回错误。</li>
+<p>但问题是，如果想求中间变量<a href="https://www.codecogs.com/eqnedit.php?latex=\inline&space;{\color{Black}&space;\boldsymbol{y}}" target="_blank"><img src="https://latex.codecogs.com/svg.latex?\inline&space;{\color{Black}&space;\boldsymbol{y}}" title="{\color{Black} \boldsymbol{y}}" /></a>的梯度，系统会返回错误。</p>
 
 可以看一下原因：
 
