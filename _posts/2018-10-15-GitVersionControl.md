@@ -40,7 +40,7 @@ tags:
 	$ git reset --hard HEAD^
 	HEAD is now at c7edbfe add txt
 
-默认参数 `-soft`,所有commit的修改都会退回到git暂存区
+默认参数 `-soft`，所有commit的修改都会退回到git暂存区
 参数`--hard`，所有commit的修改直接丢弃
 如果回退后想回去，只要命令行窗口还没有被关掉，可以直接找到回退之前某个版本的`commit_id`，回到这个指定版本：
 
@@ -48,6 +48,7 @@ tags:
 	HEAD is now at b45959e add img
 
 Git的版本回退速度非常快，因为Git在内部有个指向当前版本的`HEAD`指针，当你回退版本的时候，Git仅仅是把`HEAD`从指向`add img`：
+
 ┌────┐
 │HEAD│
 └────┘
@@ -57,7 +58,9 @@ Git的版本回退速度非常快，因为Git在内部有个指向当前版本�
         ○ add txt
         │
         ○ init
+
 改为指向`add txt`：
+
 ┌────┐
 │HEAD│
 └────┘
@@ -67,6 +70,7 @@ Git的版本回退速度非常快，因为Git在内部有个指向当前版本�
    └──> ○ add txt
         │
         ○ init
+
 然后顺便把工作区的文件更新了。所以你让HEAD指向哪个版本号，你就把当前版本定位在哪。
 
 推送到远程
