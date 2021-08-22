@@ -149,7 +149,7 @@ def forward_hook(self, in_data, out_data):
 
 当你训练一个网络，想要提取中间层的参数、或者特征图的时候，Hook就发挥它的作用了。
 
-## 参考资料
+### 参考资料
 
 - [Why cant I see .grad of an intermediate variable?](https://discuss.pytorch.org/t/why-cant-i-see-grad-of-an-intermediate-variable/94)
 - [Extract feature maps from intermediate layers without modifying forward()](https://discuss.pytorch.org/t/extract-feature-maps-from-intermediate-layers-without-modifying-forward/1390)

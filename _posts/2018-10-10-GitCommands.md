@@ -13,7 +13,7 @@ tags:
 >一些常用的Git指令
 
 
-# GitHub创建并关联远程仓库
+## GitHub创建并关联远程仓库
 
 	echo "# project name" >> README.md
 	git init
@@ -23,7 +23,7 @@ tags:
 	git push -u origin master
 
 
-# 常用操作
+## 常用操作
 
 #### 创建仓库（初始化）
 	在当前指定目录下创建

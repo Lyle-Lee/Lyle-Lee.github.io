@@ -13,7 +13,7 @@ tags:
 
 >版本回退的正确姿势
 
-# **git revert** 和 **git reset** 的区别
+#### **git revert** 和 **git reset** 的区别
 
 **sourceTree** 中 **revert** 译为**`提交回滚`**，作用为忽略你指定的版本，然后提交一个新的版本。新的版本中已近删除了你所指定的版本。
 
