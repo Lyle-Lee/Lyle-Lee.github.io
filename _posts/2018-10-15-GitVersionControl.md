@@ -49,27 +49,31 @@ tags:
 
 Git的版本回退速度非常快，因为Git在内部有个指向当前版本的`HEAD`指针，当你回退版本的时候，Git仅仅是把`HEAD`从指向`add img`：
 
-<ul>┌──┐</ul>
-<ul>│HEAD│</ul>
-<ul>└──┘</ul>
-<ul>&nbsp; &nbsp;│</ul>
+```
+┌────┐
+│HEAD│
+└────┘
+   │
    └──> ○ add img
         │
         ○ add txt
         │
         ○ init
+```
 
 改为指向`add txt`：
 
-┌──┐
+```
+┌────┐
 │HEAD│
-└──┘
+└────┘
    │
    │    ○ add img
    │    │
    └──> ○ add txt
         │
         ○ init
+```
 
 然后顺便把工作区的文件更新了。所以你让`HEAD`指向哪个版本号，你就把当前版本定位在哪。
 
