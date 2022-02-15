@@ -9,7 +9,7 @@ catalog: true
 tags:
     - iOS
     - Swift
-    - 设计模式
+    - Programing Language
 ---
 
 > Xcode 12.4 | Swift 5.0
