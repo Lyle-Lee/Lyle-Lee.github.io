@@ -67,3 +67,31 @@ vec.push_back(move(bar)); // move, bar为空（未赋值状态）
 
 ## Interfaces In C++ (Pure Virtual Functions)
 
+包含pure virtual function的类只能被当作子类继承的模版，称为interface。
+```c++
+#include <iostream>
+#include <string>
+
+class Entity {
+public:
+    virtual std::string GetName() {
+        return "Entity";
+    }
+    virtual std::string GetClassName() = 0; // pure virtual function, 子类继承时必须重载
+};
+
+class Player: public Entity {
+private:
+    std::string myName;
+public:
+    Player(const std::string& name): myName(name) {}
+    virtual std::string GetName() override {
+        return myName;
+    }
+};
+
+int main() {
+    Entity* e = new Entity(); // 编译出错, interface无法被实例化
+    Player* p = new Player("Lyle"); // 编译出错, 继承时未重载pure virtual function
+}
+```
