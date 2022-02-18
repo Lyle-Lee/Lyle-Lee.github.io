@@ -72,6 +72,7 @@ vec.push_back(move(bar)); // move, bar为空（未赋值状态）
 
 ### static
 **在`class`外部**表示只作用于文件内部，外部无权访问。(Only be visible to that `.cpp` file.)
+
 **在`class`内部**，`static`成员独立于所有实例，为`class`中的唯一存在，需要以该类的全局变量来声明。
 ```c++
 class A {
@@ -118,7 +119,9 @@ int main() {
 ## Visibility (private, public, protected)
 
 visibility的主要作用在于设定类的使用规则，避免带来复杂性。
-`class`成员默认为`private`，`struct`成员默认为`public`。`class`内部函数可以访问`private`或者`protected`成员，但子类只能访问父类的`protected`成员，无法访问其`private`成员。
+
+`class`成员默认为`private`，`struct`成员默认为`public`。
+`class`内部函数可以访问`private`或者`protected`成员，但子类只能访问父类的`protected`成员，无法访问其`private`成员。
 ```c++
 #include <iostream>
 
