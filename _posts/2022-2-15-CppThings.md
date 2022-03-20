@@ -20,7 +20,7 @@ int (*arr)[3]; // arr是一个指向[3](1个有3个int的数组)的指针
 int (*arr)[3] = &(int []){1, 2, 3};
 ```
 
-## move() 函数
+## `move()` 函数
 
 转移变量的值，与copy（赋值）不同。
 ```c++
@@ -35,7 +35,7 @@ vec.push_back(foo); // copy, foo仍然是"foo-string"
 vec.push_back(move(bar)); // move, bar为空（未赋值状态）
 ```
 
-## extern, static声明
+## `extern`, `static`声明
 
 ### extern
 `extern`声明的变量，函数以及类型只能由外部（文件）引入，若未在其他文件声明（非`static`）则出现`Link Error`。
@@ -45,7 +45,8 @@ vec.push_back(move(bar)); // move, bar为空（未赋值状态）
 
 **在`class`内部**，`static`成员独立于所有实例，为`class`中的唯一存在，需要以该类的全局变量来声明。
 ```c++
-class A {
+class A
+{
     static int x, y;
 };
 
@@ -62,31 +63,36 @@ int A::y;
 #include <iostream>
 #include <string>
 
-class Entity {
+class Entity
+{
 public:
-    virtual std::string GetName() {
+    virtual std::string GetName()
+    {
         return "Entity";
     }
     virtual std::string GetClassName() = 0; // pure virtual function, 子类继承时必须重载
 };
 
-class Player: public Entity {
+class Player: public Entity
+{
 private:
     std::string myName;
 public:
     Player(const std::string& name): myName(name) {}
-    virtual std::string GetName() override {
+    virtual std::string GetName() override
+    {
         return myName;
     }
 };
 
-int main() {
+int main()
+{
     Entity* e = new Entity(); // 编译出错, interface无法被实例化
     Player* p = new Player("Lyle"); // 编译出错, 继承时未重载pure virtual function
 }
 ```
 
-## Visibility (private, public, protected)
+## Visibility (`private`, `public`, `protected`)
 
 visibility的主要作用在于设定类的使用规则，避免带来复杂性。
 
@@ -95,27 +101,32 @@ visibility的主要作用在于设定类的使用规则，避免带来复杂性�
 ```c++
 #include <iostream>
 
-class Entity {
+class Entity
+{
 private:
     int x;
 protected:
     void Print() {}
 public:
-    Entity() {
+    Entity()
+    {
         x = 0; // 可访问
         Print(); // 可访问
     }
 };
 
-class Player: public Entity {
+class Player: public Entity
+{
 public:
-    Player() {
+    Player()
+    {
         x = 2; // 编译出错, 子类无法访问父类的private成员
         Print(); // 可访问
     }
 };
 
-int main() {
+int main()
+{
     Entity* e;
     e.x = 2; // 编译出错, private成员无法从外部访问
     e.Print(); // 编译出错, protected成员同样无法从外部访问
@@ -127,7 +138,8 @@ int main() {
 ```c++
 #include <array>
 
-class Entity {
+class Entity
+{
 public:
     const int size = 5;
     int example[size]; // 编译出错, 必须是compile-time known constant
@@ -137,7 +149,8 @@ public:
 
     std::array<int, exampleSize> arr;
 
-    Entity() {
+    Entity()
+    {
         for (int i = 0; i < arr.size(); ++i) // 区别于row array, 可调用size()方法
             arr[i] = 1;
     }
@@ -150,7 +163,8 @@ public:
 #include <iostream>
 #include <string>
 
-int main() {
+int main()
+{
     char* name = "Lyle"; // 默认为 const char* name = "Lyle";
     name[0] = 'l';
     std::cout << name << std::endl; // 执行出错(undefined behavior), 修改read-only memory
@@ -167,7 +181,8 @@ const variable
 ```c++
 #include <iostream>
 
-int main() {
+int main()
+{
     const int MAX_SIZE = 100;
     int* a = new int;
     const int* b = new int;
@@ -186,27 +201,32 @@ const method
 ```c++
 #include <iostream>
 
-class Entity {
+class Entity
+{
 private:
     int m_X, m_Y;
     mutable int var;
 public:
-    int GetX() const { // 此处const表示const方法
+    int GetX() const // 此处const表示const方法
+    {
         var = 2; // 被mutable标记的变量即使在const方法中依然可被改写
         return m_X; // 其他变量为只读
     }
 
-    void SetX(int x) {
+    void SetX(int x)
+    {
         m_X = x;
     }
 };
 
-void PrintEntity(const Entity& e) {
+void PrintEntity(const Entity& e)
+{
     std::cout << e.GetX() << std::endl;
     // const实例只能调用const方法, 此处若GetX()为非const方法则编译出错
 }
 
-int main() {
+int main()
+{
     Entity e;
     PrintEntity(e);
 }
@@ -214,9 +234,11 @@ int main() {
 
 关于`mutable`，除上述使用情况以外，较常见的还有lambda函数传值时的使用：
 ```c++
-int main() {
+int main()
+{
     int x = 8;
-    auto f = [=]() mutable { // []中为capture method. &(&x): by reference; =(x): by value
+    auto f = [=]() mutable
+    { // []中为capture method. &(&x): by reference; =(x): by value
         x++; // 若传值方式为by reference, 则无需mutable
         std::cout << x << std::endl; // 9
     };
@@ -226,9 +248,11 @@ int main() {
 ```
 此处`mutable`相当于
 ```c++
-int main() {
+int main()
+{
     int x = 8;
-    auto f = [=]() {
+    auto f = [=]()
+    {
         int y = x;
         y++;
         std::cout << y << std::endl;
@@ -240,7 +264,8 @@ int main() {
 ## 类构造函数初始化列表 Member Initializer Lists
 
 ```c++
-class Example {
+class Example
+{
 private:
     int a;
     float b;
@@ -250,7 +275,8 @@ public:
 ```
 此处`Example()`构造函数从结果上等价于
 ```c++
-Example() {
+Example()
+{
     a = 0;
     b = 0.8;
 }
@@ -271,7 +297,8 @@ Example() {
 
 对用户定义类型，例如
 ```c++
-struct Node {
+struct Node
+{
     Node* next = nullptr;
     int val;
     Node() {}
@@ -280,12 +307,14 @@ struct Node {
 ```
 能在类类型的数据成员对象进入函数体前就将其构造完成。
 ```c++
-class Example {
+class Example
+{
 private:
     int a;
     Node node;
 public:
-    Example() {
+    Example()
+    {
         a = 0;
         node = Node(0); // this actually called constructor twice: 1. Node node = Node(); 2. node = Node(0);
     }
@@ -304,19 +333,22 @@ public:
 
 using String = std::string;
 
-class Entity {
+class Entity
+{
 private:
     String myName;
 public:
     Entity(): myName("Unknown") {}
     Entity(const String& name): myName(name) {}
 
-    const String& GetName() const {
+    const String& GetName() const
+    {
         return myName;
     }
 };
 
-int main() {
+int main()
+{
     Entity entity1; // 使用默认构造函数在stack上构造
     Entity entity2("Lyle"); // 等价于 Entity entity = Entity("Lyle"); 在stack上构造
 
@@ -329,7 +361,7 @@ int main() {
     std::cout << e->GetName() << std::endl; // "" entity3被释放
 
     {
-        Entity* entity3 = new Entity("Lyle"); // 使用 NEW key word为在heap上构造, 以指针形式返回
+        Entity* entity3 = new Entity("Lyle"); // 使用`new` keyword为在heap上构造, 以指针形式返回
         e = entity3;
         std::cout << e->GetName() << std::endl; // "Lyle"
     }
@@ -340,3 +372,182 @@ int main() {
 必须在heap上构造的两种情况：
 - 需要于**作用域外时**依然生效（need to control the life time）。
 - **实例占用较大内存时**: stack的容量通常较小（1MB～2MB，取决于编译器和平台）。
+
+### `new` Keyword
+
+`new`是一个operator，在heap上分配内存，与`C`中的`malloc()`有相同行为，但是`new`调用了构造函数。
+
+相对的，通过`new`构造的实例一般情况需要使用`delete`来释放，`delete`与`C`中的`free()`有相同行为，但是调用了`destructor`。
+```c++
+int main()
+{
+    int a = 2; // stack上申请连续的4byte
+    int* b = new int[50]; // heap上申请连续的200byte; new[] 逐个调用constructor
+
+    Entity* e = new Entity(); // new() 括号中可指定分配的地址
+    Entity* e = (Entity*)malloc(sizeof(Entity)); // 与上面的唯一区别在于没有调用构造函数
+    delete e; // 调用destructor
+    free(e);
+
+    delete[] b; // 释放时需要与new的方式对应, 逐个调用destructor
+}
+```
+
+## 隐式转换 Implicit Conversion and `explicit` Keyword
+
+编译器允许构造实例时通过构造函数进行**一次**隐式转换。
+```c++
+#include <iostream>
+#include <string>
+
+class Entity
+{
+private:
+    std::string m_Name;
+    int m_Age;
+public:
+    Entity(std::string& name): m_Name(name), m_Age(-1) {}
+
+    explicit Entity(int age) // 此处`explicit` keyword表示通过该构造函数构造时必须以显式的方式
+        : m_Name("Unknown"), m_Age(age) {}
+};
+
+void PrintEntity(const Entity& entity)
+{
+    // Do some printing
+}
+
+int main()
+{
+    Entity e = "Lyle"; // 发生隐式转换, 对应的显式构造为 e("Lyle")
+    Entity e = 25; // 编译出错, 无法进行隐式转换
+
+    PrintEntity(25); // 编译出错, 理由同上
+    PrintEntity("Lyle"); // 编译出错, 字符串默认为`const char*`(char array)类型, 需要先进行一次隐式转换(cast to `std::string`), 再隐式转换成`Entity`类型, 而编译器只允许发生一次隐式转换
+    PrintEntity(Entity("Lyle")); // or PrintEntity(std::string("Lyle")) 为正确构造方式
+}
+```
+
+## Operator Overloading
+
+`C++`允许类对操作符（如`+`，`-`，`*`，`/`，`==`等）进行重载。
+```c++
+#include <iostream>
+
+struct Vector2
+{
+    float x, y;
+
+    Vector2(float x, float y): x(x), y(y) {}
+
+    Vector2 Add(const Vector2& other) const
+    {
+        return Vector2(x + other.x, y + other.y);
+    }
+
+    Vector2 Multiply(const Vector2& other) const
+    {
+        return Vector2(x * other.x, y * other.y);
+    }
+
+    Vector2 operator+(const Vector2& other) const // 对`+`重载
+    {
+        return Vector2(x + other.x, y + other.y); // (*this).Add(other)
+    }
+
+    Vector2 operator*(const Vector2& other) const // 对`*`重载
+    {
+        return Vector2(x * other.x, y * other.y); // (*this).Multiply(other)
+    }
+
+    bool operator==(const Vector2& other) const // 对逻辑运算重载
+    {
+        return x == other.x && y == other.y;
+    }
+
+    bool operator!=(const Vector2& other) const
+    {
+        return !(*this == other);
+    }
+};
+
+std::ostream& operator<<(std::ostream& stream, const Vector2& vec) const // 对 stream(<<) 重载, 相当于通过对操作符重载实现`std::to_string()`
+{
+    stream << vec.x << ", " << vec.y;
+    return stream;
+}
+
+int main()
+{
+    Vector2 position(3.0f, 3.0f);
+    Vector2 speed(0.5f, 1.5f);
+    Vector2 powerup(1.1f, 1.1f);
+
+    Vector2 result = position.Add(speed.Multiply(powerup));
+    Vector2 res = position + speed * powerup; // 与上面一致, 好处是增强可读性
+
+    std::cout << res << std::endl;
+    std::cout << speed == powerup << std::endl;
+}
+```
+
+## 友元 友元类/友元函数
+
+类的友元函数是定义在类外部，但有权访问类的所有`private`成员和`protected`成员。尽管友元函数的原型有在类的定义中出现过，但是友元函数并不是成员函数。
+
+友元可以是一个函数，该函数被称为友元函数；友元也可以是一个类，该类被称为友元类，在这种情况下，整个类及其所有成员都是友元。
+
+如果要声明函数为一个类的友元，需要在类定义中该函数原型前使用`friend` keyword；
+如果要声明一个类的友元类，则需要在该类的定义中放置友元类的声明，如下所示：
+```c++
+#include <iostream>
+
+class Box
+{
+private:
+   double width;
+public:
+   double length;
+   friend void printWidth(Box box); // 友元函数
+   friend class BigBox; // 友元类
+   void setWidth(double wid);
+};
+
+class BigBox
+{
+public :
+    void Print(int width, Box &box)
+    {
+        // `BigBox`是`Box`的友元类, 它可以直接访问`Box`类的任何成员
+        box.setWidth(width);
+        std::cout << "Width of box : " << box.width << std::endl;
+    }
+};
+
+// 成员函数定义
+void Box::setWidth(double wid)
+{
+    width = wid;
+}
+
+// 注意: `printWidth()`不是任何类的成员函数
+void printWidth(Box box)
+{
+    /* 因为`printWidth()`是`Box`的友元, 它可以直接访问该类的任何成员 */
+    cout << "Width of box : " << box.width << endl;
+}
+
+int main()
+{
+    Box box;
+    BigBox big;
+
+    box.setWidth(10.0d);
+
+    // 使用友元函数输出
+    printWidth(box);
+
+    // 使用友元类中的方法设置成员变量
+    big.Print(20.0d, box);
+}
+```
