@@ -551,3 +551,120 @@ int main()
     big.Print(20.0d, box);
 }
 ```
+
+## `this`指针
+
+`this`指针是所有成员函数的隐含参数，每一个对象都能通过`this`指针来访问自己的地址。因此，在成员函数内部，它可以用来指向调用对象。
+
+友元函数没有`this`指针，因为友元不是类的成员。
+```c++
+#include <iostream>
+
+void PrintEntity(Entity* e);
+
+class Entity
+{
+public:
+    int x, y;
+
+    Entity(int x, int y)
+    {
+        // 非`const`成员函数中, `this`被定义为`Entity* const this`
+        this->x = x;
+        this->y = y;
+
+        PrintEntity(this); // 在成员函数内部调用外部函数时, `this`可作为代表自身的入参
+    }
+
+    int GetX() const
+    {
+        // 在`const`成员函数中, `this`被定义为`const Entity* const this`
+        return this->x;
+    }
+};
+
+void PrintEntity(Entity* e)
+{
+    std::cout << e->y << std::endl;
+}
+```
+
+## Smart Pointers
+
+### Unique Pointer `std::unique_ptr`
+
+本质是在stack上分配的指针，在scope结束时会自动调用对象的destructor。因此使用`unique_ptr`构造实例时，在使用`new`在heap上构造的同时无需调用`delete`来手动释放内存。
+
+同样也是这个原因，为了防止memory leak，`unique_ptr`无法被拷贝。
+```c++
+#include <iostream>
+#include <string>
+#include <memory>
+
+class Entity
+{
+public:
+    Entity()
+    {
+        std::cout << "Created Entity!" << std::endl;
+    }
+
+    ~Entity()
+    {
+        std::cout << "Destroyed Entity!" << std::endl;
+    }
+
+    void Print() {}
+};
+
+class ScopedPtr() // `unique_ptr`的行为与此类相似
+{
+private:
+    Entity* m_Ptr;
+public:
+    ScopedPtr(Entity* ptr): m_Ptr(ptr) {}
+
+    ~ScopedPtr()
+    {
+        delete m_Ptr;
+    }
+}
+
+int main()
+{
+    {
+        ScopedPtr e = new Entity(); // 隐式转换
+    } // scope结束后`e`被自动释放
+
+    {
+        std::unique_ptr<Entity> e(new Entity()); // `unique_ptr`不允许隐式转换, 其拷贝构造函数与赋值操作符均被delete
+        e->Print(); // 可以像正常的`Entity`类指针一样调用其成员函数
+
+        std::unique_ptr<Entity> entity = std::make_unique<Entity>(); // 更安全的使用方法, exception safety (C++14以后)
+    } // scope结束后`e`, `entity`都被自动释放
+
+    std::cin.get();
+}
+```
+
+### Shared Pointer `std::shared_ptr` 与 Weak Pointer `std::weak_ptr`
+
+shared pointer通过reference counting实现，构造时会额外分配一块内存给control block用于保存reference counting, 可以被复制or拷贝。
+
+而shared pointer复制or拷贝给weak pointer时不会增加reference counting。
+```c++
+int main()
+{
+    std::weak_ptr<Entity> e2;
+    {
+        std::shared_ptr<Entity> e1;
+        {
+            std::shared_ptr<Entity> e(new Entity()); // 本质为两次构造, 有性能损耗
+            std::shared_ptr<Entity> sharedEntity = std::make_shared<Entity>(); // 推荐使用, 考虑exception safety的同时一次性构造
+
+            e1 = sharedEntity; // 可被拷贝, reference counting = 2
+            e2 = sharedEntity; // 不计数, reference counting仍然为2
+        } // `sharedEntity`的scope结束, reference counting = 1
+    } // reference counting = 0, `Entity`对象被自动释放, 同时weak_ptr `e2`失效
+}
+```
