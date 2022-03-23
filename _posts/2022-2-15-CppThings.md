@@ -649,9 +649,9 @@ int main()
 
 ### Shared Pointer `std::shared_ptr` 与 Weak Pointer `std::weak_ptr`
 
-shared pointer通过reference counting实现，构造时会额外分配一块内存给control block用于保存reference counting, 可以被复制or拷贝。
+shared pointer通过reference counting实现，构造时会额外分配一块内存给control block用于保存reference counting, 可以被赋值or拷贝。
 
-而shared pointer复制or拷贝给weak pointer时不会增加reference counting。
+而shared pointer赋值or拷贝给weak pointer时不会增加reference counting。
 ```c++
 int main()
 {
@@ -660,11 +660,111 @@ int main()
         std::shared_ptr<Entity> e1;
         {
             std::shared_ptr<Entity> e(new Entity()); // 本质为两次构造, 有性能损耗
-            std::shared_ptr<Entity> sharedEntity = std::make_shared<Entity>(); // 推荐使用, 考虑exception safety的同时一次性构造
+            std::shared_ptr<Entity> sharedEntity = std::make_shared<Entity>(); // 推荐使用, 考虑exception safety的同时一次性分配内存
 
             e1 = sharedEntity; // 可被拷贝, reference counting = 2
             e2 = sharedEntity; // 不计数, reference counting仍然为2
         } // `sharedEntity`的scope结束, reference counting = 1
     } // reference counting = 0, `Entity`对象被自动释放, 同时weak_ptr `e2`失效
+}
+```
+
+### 这些智能指针分别是如何实现的
+
+- `scoped_ptr`私有化了拷贝构造函数和赋值操作符，资源的所有权无法进行转移，也无法在容器中使用，这种方式杜绝了浅拷贝的发生。
+- `unique_ptr`删除了拷贝构造函数和赋值操作符，因此不支持普通的拷贝或赋值操作。但引入了移动构造函数和移动操作符。所以它们保证了有唯一的智能指针持有此资源。`unique_ptr`还提供了`reset()`重置资源，`swap()`交换资源等函数，也经常会使用到。
+- `shared_ptr`称为强智能指针，它的资源引用计数器在内存的heap上（这保证了，每个智能指针的引用计数变量会动态的变化）。通常用于管理对象的生命周期。只要有一个指向对象的`shared_ptr`存在，该对象就不会被析构。
+- `weak_ptr`被称为弱智能指针，其对资源的引用不会引起资源的引用计数的变化，通常作为观察者，用于判断资源是否存在，并根据不同情况做出相应的操作。比如使用`weak_ptr`对资源进行弱引用，当调用`weak_ptr`的`lock()`方法时，若返回`nullptr`，则说明资源已经不存在，放弃对资源继续操作。否则，将返回一个`shared_ptr`对象，可以继续操作资源。另外，一旦最后一个指向对象的`shared_ptr`被销毁（引用计数器归0），对象就会被释放。即使有`weak_ptr`指向对象，对象也还是会被释放。当需要多个智能指针指向同一个资源时，使用带引用计数的`shared_ptr`。每增加一个智能指针指向同一资源，资源引用计数加1，反之减1。当引用计数为0时，由最后一个指向资源的智能指针将资源进行释放。
+
+### 如何避免循环引用
+
+```c++
+#include <iostream>
+#include <memory>
+
+using namespace std;
+
+class B; // 前置声明类B
+
+class A
+{
+public:
+    A() { cout << "A()" << endl; }
+    ~A() { cout << "~A()" << endl; }
+    shared_ptr<B> _ptrb; // 指向B对象的智能指针
+};
+
+class B
+{
+public:
+    B() { cout << "B()" << endl; }
+    ~B() { cout << "~B()" << endl; }
+    shared_ptr<A> _ptra; // 指向A对象的智能指针
+};
+
+int main()
+{
+    shared_ptr<A> ptra(new A()); // ptra指向A对象，A的引用计数为1
+    shared_ptr<B> ptrb(new B()); // ptrb指向B对象，B的引用计数为1
+    ptra->_ptrb = ptrb;          // A对象的成员变量_ptrb也指向B对象，B的引用计数为2
+    ptrb->_ptra = ptra;          // B对象的成员变量_ptra也指向A对象，A的引用计数为2
+
+    cout << ptra.use_count() << endl; // 打印A的引用计数结果:2
+    cout << ptrb.use_count() << endl; // 打印B的引用计数结果:2
+
+    /*
+	出main函数作用域，ptra和ptrb两个局部对象析构，分别给A对象和
+	B对象的引用计数从2减到1，达不到释放A和B的条件（释放的条件是
+	A和B的引用计数为0），因此造成两个new出来的A和B对象无法释放，
+	导致内存泄露，这个问题就是“强智能指针的交叉引用(循环引用)问题”
+	*/
+    return 0;
+}
+```
+
+**解决办法:** 这也是强弱智能指针的一个重要应用规则：定义对象时，用强智能指针`shared_ptr`，在其它地方引用对象时，使用弱智能指针`weak_ptr`。
+```c++
+#include <iostream>
+#include <memory>
+
+using namespace std;
+
+class B; // 前置声明类 B
+
+class A
+{
+public:
+    A() { cout << "A()" << endl; }
+    ~A() { cout << "~A()" << endl; }
+    weak_ptr<B> _ptrb; // 指向 B 对象的弱智能指针。引用对象时，用弱智能指针
+};
+
+class B
+{
+public:
+    B() { cout << "B()" << endl; }
+    ~B() { cout << "~B()" << endl; }
+    weak_ptr<A> _ptra; // 指向 A 对象的弱智能指针。引用对象时，用弱智能指针
+};
+
+int main()
+{
+    // 定义对象时，用强智能指针
+    shared_ptr<A> ptra(new A()); // ptra 指向 A 对象，A 的引用计数为 1
+    shared_ptr<B> ptrb(new B()); // ptrb 指向B 对象，B 的引用计数为 1
+    // A 对象的成员变量 ptrb 也指向 B 对象，B 的引用计数为 1，因为是弱智能指针，引用计数没有改变
+    ptra->_ptrb = ptrb;
+    // B 对象的成员变量 ptra 也指向 A 对象，A 的引用计数为 1，因为是弱智能指针，引用计数没有改变
+    ptrb->_ptra = ptra;
+
+    cout << ptra.use_count() << endl; // 打印结果: 1
+    cout << ptrb.use_count() << endl; // 打印结果: 1
+
+    /*
+	出 main 函数作用域，ptra 和 ptrb 两个局部对象析构，分别给 A 对象和
+	B 对象的引用计数从 1 减到 0，达到释放 A 和 B 的条件，因此 new 出来的 A 和 B 对象
+	被析构掉，解决了“强智能指针的交叉引用(循环引用)问题”
+	*/
+    return 0;
 }
 ```
