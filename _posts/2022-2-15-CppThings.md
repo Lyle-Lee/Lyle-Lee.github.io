@@ -56,41 +56,100 @@ int A::y;
 `static`方法同样作为该类所有实例的共通且唯一的方法而存在。
 `static`方法无法访问非`static`成员（非`static`成员作为实例成员存在，对`static`方法来说相当于未定义）。
 
-## Interfaces In C++ (Pure Virtual Functions)
+## Virtual Functions
 
-包含pure virtual function的类只能被当作子类继承的模版，称为interface。
+虚函数引入动态绑定，通过虚函数表（虚表，vtable）来实现编译。虚表包含对基类中所有虚函数的映射（保存虚函数地址），对于有虚函数的类，编译器在编译阶段会自动生成属于该类的虚表。
 ```c++
-#include <iostream>
+#include <iotream>
 #include <string>
 
 class Entity
 {
 public:
-    virtual std::string GetName()
-    {
-        return "Entity";
-    }
-    virtual std::string GetClassName() = 0; // pure virtual function, 子类继承时必须重载
+    virtual std::string GetName() { return "Entity"; }
 };
 
 class Player: public Entity
 {
 private:
-    std::string myName;
+    std::string m_Name;
 public:
-    Player(const std::string& name): myName(name) {}
-    virtual std::string GetName() override
-    {
-        return myName;
-    }
+    Player(const std::string& name): m_Name(name) {}
+    std::string GetName() override { return m_Name; }
 };
+
+void PrintName(Entity* entity)
+{
+    std::cout << entity->GetName() << std::endl;
+}
 
 int main()
 {
-    Entity* e = new Entity(); // 编译出错, interface无法被实例化
-    Player* p = new Player("Lyle"); // 编译出错, 继承时未重载pure virtual function
+    Entity* e = new Entity();
+    Player* p = new Player("Lyle");
+    PrintName(e); // 打印"Entity"
+    PrintName(p); // Player is an Entity, 打印"Lyle"
 }
 ```
+在含有虚函数的类对象被实例化时，对象地址的前4个字节存储指向虚表的指针vptr。
+
+### 多态
+
+虚函数的引入实现了多态，其过程如下：
+
+- 编译器在发现基类中有虚函数时，会自动为每个含有虚函数的类生成一份虚表，该表是一个一维数组，虚表里保存了虚函数的入口地址。
+- 编译器会在每个对象的前4个字节中保存一个虚表指针，即vptr，指向对象所属类的虚表。在构造时，根据对象的类型去初始化虚指针vptr，从而让vptr指向正确的虚表，从而在调用虚函数时，能找到正确的函数。
+- 在子类对象被实例化时，程序运行会自动调用构造函数，在构造函数中创建虚表并对虚表初始化。在构造子类对象时，会先调用父类的构造函数，此时，编译器只“看到了”父类，并将其作为父类对象初始化虚表指针，令它指向父类的虚表；当调用子类的构造函数时，再作为子类对象初始化虚表指针，令它指向子类的虚表。
+- 当子类没有重写基类的虚函数时，其虚表指针指向的是基类的虚表；反之，其虚表指针指向的是自身的虚表；当子类中有自己的虚函数时，在自己的虚表中将此虚函数地址添加在后面。
+
+## Interfaces In C++ (Pure Virtual Functions)
+
+纯虚函数只有定义没有实现，需要子类具体实现（继承时必须重写纯虚函数）。
+包含纯虚函数的类只能被当作接口，称为**interface/虚类**。
+```c++
+#include <iostream>
+#include <string>
+
+class Printable
+{
+public:
+    virtual std::string GetClassName() = 0; // pure virtual function, 子类继承时必须重写
+};
+
+class Entity: public Printable
+{
+public:
+    virtual std::string GetName() { return "Entity"; }
+    std::string GetClassName() override { return "Entity"; } // 必须重写，否则该类型无法实例化
+};
+
+class Player: public Entity
+{
+private:
+    std::string m_Name;
+public:
+    Player(const std::string& name): m_Name(name) {}
+    std::string GetName() override { return m_Name; }
+    std::string GetClassName() override { return "Player"; } // 此处为非必须，因为父类`Entity`已重写纯虚函数
+};
+
+void PrintClassName(Printable* obj) // 作为接口，保证该基于该类型的子类实例有`GetClassName`这一特性
+{
+    std::cout << obj->GetClassName() << std::endl;
+}
+
+int main()
+{
+    Printable* pvf = new Printable(); // 编译出错, interface无法被实例化
+    Entity* e = new Entity();
+    Player* p = new Player("Lyle");
+    PrintClassName(e); // "Entity"
+    PrintClassName(p); // "Player"
+}
+```
+**作用：** 如上面的`PrintClassName()`函数所示，通过定义`Printable`虚类作为接口，保证了相应的子类有对其纯虚函数的重写，从而保证相应方法能够被调用，无视实际`class`类型。
+
+对于析构函数为纯虚析构函数的虚类，其每一个派生类析构函数会被编译器加以扩张，以静态调用的方式调用其每一个虚基类以及上一层基类的析构函数。因此强制了每一次继承都必须定义析构函数。
 
 ## Visibility (`private`, `public`, `protected`)
 
@@ -766,5 +825,68 @@ int main()
 	被析构掉，解决了“强智能指针的交叉引用(循环引用)问题”
 	*/
     return 0;
+}
+```
+
+## 深/浅拷贝 拷贝构造函数
+
+当类成员有指针时，默认的拷贝构造函数只能实现浅拷贝，只拷贝相应的指针并使其指向相同的一块内存。
+这种情况下，两个对象被析构时会调用两次析构函数，而作为成员变量的指针指向的内存也会被释放两次，释放不属于自己的内存导致程序崩溃。
+以一个自定义实现的`String`类为例：
+```c++
+#include <iostream>
+
+class String
+{
+private:
+    char* m_Buffer;
+    unsigned int m_Size;
+public:
+    String(const char* string)
+    {
+        m_Size = strlen(string);
+        m_Buffer = new char[m_Size + 1];
+        memcpy(m_Buffer, string, m_Size);
+        m_Buffer[m_Size] = 0; // end of a string ('\0')
+    }
+
+    String(const String& other) // 拷贝构造函数, 默认指拷贝自己的成员变量
+        : m_Size(other.m_Size)
+    {
+        // memcpy(this, &other, sizeof(String)); // 默认情况, 相当于`m_Buffer(other.m_Buffer), m_Size(other.m_Size)`, 需要手动实现深拷贝
+        m_Buffer = new char[m_Size + 1];
+        memcpy(m_Buffer, other.m_Buffer, m_Size + 1); // 包含终止符
+    }
+
+    ~String()
+    {
+        delete[] m_Buffer; // 用new在heap上分配内存需要手动对其释放
+    }
+
+    char& operator[](unsigned int index)
+    {
+        return m_Buffer[index];
+    }
+
+    friend std::ostream& operator<<(std::ostream& stream, const String& string);
+};
+
+std::ostream& operator<<(std::ostream& stream, const String& string)
+{
+    stream << string.m_Buffer;
+    return stream;
+}
+
+int main()
+{
+    String str1 = "Lyle";
+    String str2 = str1;
+
+    str2[0] = 'l';
+
+    std::cout << str1 << std::endl; // "Lyle"
+    std::cout << str2 << std::endl; // "lyle", `str2`与`str1`有了互相独立的内存, 在作用域结束后两者的析构都能够正常进行
+
+    std::cin.get();
 }
 ```
