@@ -38,9 +38,13 @@ vec.push_back(move(bar)); // move, bar为空（未赋值状态）
 ## `extern`, `static`声明
 
 ### extern
+
 `extern`声明的变量，函数以及类型只能由外部（文件）引入，若未在其他文件声明（非`static`）则出现`Link Error`。
 
 ### static
+
+静态变量存放与内存分区的**全局/静态区**，在编译阶段会被初始化（若没有显式初始化则会被自动进行，如`int`型变量自动初始为`0`）。
+
 **在`class`外部**表示只作用于文件内部，外部无权访问。(Only be visible to that `.cpp` file.)
 
 **在`class`内部**，`static`成员独立于所有实例，为`class`中的唯一存在，需要以该类的全局变量来声明。
@@ -53,12 +57,13 @@ class A
 int A::x;
 int A::y;
 ```
+
 `static`方法同样作为该类所有实例的共通且唯一的方法而存在。
-`static`方法无法访问非`static`成员（非`static`成员作为实例成员存在，对`static`方法来说相当于未定义）。
+`static`方法没有`this`指针，无法访问非`static`成员（非`static`成员作为实例成员存在，对`static`方法来说相当于未定义）。
 
 ## Virtual Functions
 
-虚函数引入动态绑定，通过虚函数表（虚表，vtable）来实现编译。虚表包含对基类中所有虚函数的映射（保存虚函数地址），对于有虚函数的类，编译器在编译阶段会自动生成属于该类的虚表。
+虚函数引入动态绑定，通过虚函数表（虚表，vtable，位于内存分区的**常量区**）来实现编译。虚表包含对基类中所有虚函数的映射（保存虚函数地址），对于有虚函数的类，编译器在编译阶段会自动生成属于该类的虚表。
 ```c++
 #include <iotream>
 #include <string>
@@ -92,6 +97,7 @@ int main()
 }
 ```
 在含有虚函数的类对象被实例化时，对象地址的前4个字节存储指向虚表的指针vptr。
+调用关系：`this`->vptr->vtable->virtual function。
 
 ### 多态
 
@@ -102,10 +108,10 @@ int main()
 - 在子类对象被实例化时，程序运行会自动调用构造函数，在构造函数中创建虚表并对虚表初始化。在构造子类对象时，会先调用父类的构造函数，此时，编译器只“看到了”父类，并将其作为父类对象初始化虚表指针，令它指向父类的虚表；当调用子类的构造函数时，再作为子类对象初始化虚表指针，令它指向子类的虚表。
 - 当子类没有重写基类的虚函数时，其虚表指针指向的是基类的虚表；反之，其虚表指针指向的是自身的虚表；当子类中有自己的虚函数时，在自己的虚表中将此虚函数地址添加在后面。
 
-## Interfaces In C++ (Pure Virtual Functions)
+## Interfaces In `C++` (Pure Virtual Functions)
 
-纯虚函数只有定义没有实现，需要子类具体实现（继承时必须重写纯虚函数）。
-包含纯虚函数的类只能被当作接口，称为**interface/虚类**。
+纯虚函数只有定义没有实现，需要子类具体实现（需要实例化的类在继承时必须重写纯虚函数，对其进行实现）。
+包含纯虚函数的类只能被当作接口，称为**interface/抽象类**。
 ```c++
 #include <iostream>
 #include <string>
@@ -147,9 +153,9 @@ int main()
     PrintClassName(p); // "Player"
 }
 ```
-**作用：** 如上面的`PrintClassName()`函数所示，通过定义`Printable`虚类作为接口，保证了相应的子类有对其纯虚函数的重写，从而保证相应方法能够被调用，无视实际`class`类型。
+**作用：** 如上面的`PrintClassName()`函数所示，通过定义`Printable`抽象类作为接口，保证了相应的子类有对其纯虚函数的重写，从而保证相应方法能够被调用，无视实际`class`类型。
 
-对于析构函数为纯虚析构函数的虚类，其每一个派生类析构函数会被编译器加以扩张，以静态调用的方式调用其每一个虚基类以及上一层基类的析构函数。因此强制了每一次继承都必须定义析构函数。
+对于析构函数为纯虚析构函数的抽象类，其每一个派生类析构函数会被编译器加以扩张，以静态调用的方式调用其每一个虚基类以及上一层基类的析构函数。因此强制了每一次继承都必须定义析构函数。
 
 ## Visibility (`private`, `public`, `protected`)
 
@@ -201,7 +207,7 @@ class Entity
 {
 public:
     const int size = 5;
-    int example[size]; // 编译出错, 必须是compile-time known constant
+    int example[size]; // 编译出错, stack上分配内存必须是compile-time-known constant
 
     static const int exampleSize = 5;
     int example[exampleSize]; // 正确
@@ -236,7 +242,7 @@ int main()
 
 ## Const
 
-const variable
+`const` variable
 ```c++
 #include <iostream>
 
@@ -256,7 +262,7 @@ int main()
 }
 ```
 
-const method
+`const` method
 ```c++
 #include <iostream>
 
@@ -318,6 +324,20 @@ int main()
     };
     f();
 }
+```
+
+### `constexpr` vs. `const`
+
+`constexpr`表示*constant expression*，基本概念与`const`一致，但`constexpr`可以用来声明构造函数，并在可能的情况下，要求编译器在编译阶段进行初始化。
+
+虽然在运行前初始化有助于提升性能，但`constexpr`有很多限制，比如不能用来修饰虚函数（编译阶段无法决定），有虚基类的子类的构造函数不能为`constexpr`等。
+```c++
+constexpr float x = 42.0;
+constexpr float y{108};
+constexpr float z = exp(5, 3);
+constexpr int i; // Error! Not initialized
+int j = 0;
+constexpr int k = j + 1; //Error! j not a constant expression
 ```
 
 ## 类构造函数初始化列表 Member Initializer Lists
@@ -593,7 +613,7 @@ void Box::setWidth(double wid)
 void printWidth(Box box)
 {
     /* 因为`printWidth()`是`Box`的友元, 它可以直接访问该类的任何成员 */
-    cout << "Width of box : " << box.width << endl;
+    std::cout << "Width of box : " << box.width << std::endl;
 }
 
 int main()
@@ -888,5 +908,89 @@ int main()
     std::cout << str2 << std::endl; // "lyle", `str2`与`str1`有了互相独立的内存, 在作用域结束后两者的析构都能够正常进行
 
     std::cin.get();
+}
+```
+
+## Template
+
+函数和类中都可引入模板，函数模板的实例化是由编译程序在处理函数调用时自动完成的，而类模板的实例化必须由程序员在程序中显式地指定。
+两者都是在编译时生成额外的代码（编译前可视为不存在，取决于编译器）。
+```c++
+#include <iostream>
+#include <string>
+
+template<typename T>
+void Print(T value)
+{
+    std::cout << value << std::endl;
+}
+
+template<typename T, int N>
+class Array
+{
+private:
+    T m_Array[N]; // `N`可作为compile-time-known类型在stack上分配内存
+public:
+    int GetSize() const { return N; }
+};
+
+int main()
+{
+    Print(5); // 函数模板可隐式调用
+    Print<std::string>("Lyle"); // 显式
+
+    Array<int, 5> arr1; // 必须显式
+    Array<std::string, 5> arr2;
+}
+```
+
+函数模板允许隐式调用和显式调用而类模板只能显式调用（在使用时类模板必须在`<>`中给出实际内容，而函数模板不必）。
+
+## 函数指针
+
+函数指针可以使程序访问CPU指令的地址（内存分区中的**代码区**），命名方式为`return_type(*name)(parameter_type)`。
+```c++
+#include <iostream>
+
+void HelloWorld()
+{
+    std::cout << "HelloWorld" << std::endl;
+}
+
+int main()
+{
+    auto function = HelloWorld; // 本质为`&HelloWorld`(发生了隐式转换), 此时将函数地址(二进制CPU指令的地址)通过指针赋值给了`function`
+
+    void(*function)() = HelloWorld; // 常规命名方式
+
+    typedef void(*HelloWorldFunc)(); // 可以通过这种方式使命名方式与其他类型相同
+    HelloWorldFunc function = HelloWorld;
+
+    function(); // 可直接调用
+}
+```
+
+**函数指针的作用:** 将函数作为其他函数（比如API中的函数）的入参，Lambda函数的应用场景。
+```c++
+#include <iostream>
+#include <vector>
+
+void PrintValue(int value)
+{
+    std::cout << "Value: " << value << std::endl;
+}
+
+void ForEach(const std::vector<int>& values, void(*func)(int))
+{
+    for (int value : values)
+        func(value);
+}
+
+int main()
+{
+    std::vector<int> vec = { 1, 2, 3, 4, 5 };
+    ForEach(vec, PrintValue); // 相当于告诉一个函数我想做什么事情
+
+    ForEach(vec, [](int value) { std::cout << "Value: " << value << std::endl; }); // 应用Lambda函数
 }
 ```
