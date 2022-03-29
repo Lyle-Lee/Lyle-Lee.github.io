@@ -20,21 +20,6 @@ int (*arr)[3]; // arr是一个指向[3](1个有3个int的数组)的指针
 int (*arr)[3] = &(int []){1, 2, 3};
 ```
 
-## `move()` 函数
-
-转移变量的值，与copy（赋值）不同。
-```c++
-#include <string>
-#include <vector>
-
-std::string foo = "foo-string";
-std::string bar = "bar-string";
-std::vector<std::string> vec;
-
-vec.push_back(foo); // copy, foo仍然是"foo-string"
-vec.push_back(move(bar)); // move, bar为空（未赋值状态）
-```
-
 ## `extern`, `static`声明
 
 ### extern
@@ -870,7 +855,7 @@ public:
         m_Buffer[m_Size] = 0; // end of a string ('\0')
     }
 
-    String(const String& other) // 拷贝构造函数, 默认指拷贝自己的成员变量
+    String(const String& other) // 拷贝构造函数, 默认只拷贝自己的成员变量
         : m_Size(other.m_Size)
     {
         // memcpy(this, &other, sizeof(String)); // 默认情况, 相当于`m_Buffer(other.m_Buffer), m_Size(other.m_Size)`, 需要手动实现深拷贝
@@ -993,4 +978,108 @@ int main()
 
     ForEach(vec, [](int value) { std::cout << "Value: " << value << std::endl; }); // 应用Lambda函数
 }
+```
+
+## Moving Semantics 移动赋值操作 移动构造函数
+
+构造对象时产生的临时变量默认通过拷贝的方式传递给成员变量，此时调用拷贝构造函数会产生额外的性能开销，通过定义移动构造函数及引动赋值操作符能够避免不必要的拷贝。
+
+```c++
+#include <iostream>
+
+class String
+{
+private:
+    char* m_Buffer;
+    uint32_t m_Size;
+public:
+    String() = default;
+    String(const char* string)
+    {
+        std::cout << "Created" << std::endl;
+        m_Size = strlen(string);
+        m_Buffer = new char[m_Size + 1];
+        memcpy(m_Buffer, string, m_Size);
+        m_Buffer[m_Size] = 0; // end of a string ('\0')
+    }
+
+    String(const String& other) // 拷贝构造函数
+        : m_Size(other.m_Size)
+    {
+        std::cout << "Copied" << std::endl;
+        m_Buffer = new char[m_Size + 1];
+        memcpy(m_Buffer, other.m_Buffer, m_Size + 1); // 包含终止符
+    }
+
+    String(String&& other) noexcept // 移动构造函数
+    {
+        std::cout << "Moved" << std::endl;
+        m_Size = other.m_Size;
+        m_Buffer = other.m_Buffer;
+
+        other.m_Size = 0;
+        other.m_Buffer = nullptr; // 把`other`变成虚空对象, 通过这种方式使临时对象被析构时不会把原先分配的内存释放, 从而使`other.m_Buffer`管理的资源由`this->m_Buffer`接管
+    }
+
+    ~String()
+    {
+        std::cout << "Destroyed" << std::endl;
+        delete[] m_Buffer; // 用new在heap上分配内存需要手动对其释放
+    }
+
+    char& operator[](unsigned int index)
+    {
+        return m_Buffer[index];
+    }
+
+    friend std::ostream& operator<<(std::ostream& stream, const String& string);
+};
+
+std::ostream& operator<<(std::ostream& stream, const String& string)
+{
+    stream << string.m_Buffer;
+    return stream;
+}
+
+class Entity
+{
+private:
+    String m_Name;
+public:
+    Entity(const String& name): m_Name(name) {}
+    Entity(String&& name): m_Name((String&&)name) {} // 通过右值引用的方式构造, 需要显式的cast才能正确调用成员变量的移动构造函数
+
+    void PrintName()
+    {
+        std::cout << m_Name << std::endl;
+    }
+};
+
+int main()
+{
+    // 定义移动构造函数前:
+    Entity e1 = Entity(String("Lyle")); // 默认构造方式为先构造一个临时的`String`类型, 然后`Entity`类型的构造函数将其拷贝给成员变量`m_Name`
+    // "Created" "Copied" "Destroyed" // 临时对象先被析构
+    e1.PrintName(); // "Lyle"
+
+    // 定义移动构造函数后:
+    Entity e2 = Entity(String("Lyle")); // 避免了调用拷贝构造函数, 从而通过减少一次内存分配来提升性能
+    // "Created" "Moved" "Destroyed"
+    e2.PrintName(); // "Lyle"
+}
+```
+
+### `std::move()` 函数
+
+转移变量的值，移动语义。通过将对象cast成临时变量（右值引用），使得相应的类对象通过移动构造函数被实例化。
+```c++
+#include <string>
+#include <vector>
+
+std::string foo = "foo-string";
+std::string bar = "bar-string";
+std::vector<std::string> vec;
+
+vec.push_back(foo); // copy, foo仍然是"foo-string"
+vec.push_back(std::move(bar)); // move, bar为空（未赋值状态）
 ```
