@@ -4,7 +4,7 @@ title:      Things about C++
 subtitle:   C++ 学习笔记
 date:       2022-2-15
 author:     Lyle
-header-img: img/post-bg-eula.png
+header-img: img/post-bg-lantern.JPG
 catalog: true
 tags:
     - C++
