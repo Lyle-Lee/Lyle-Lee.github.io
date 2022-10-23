@@ -33,6 +33,7 @@ int (*arr)[3] = &(int []){1, 2, 3};
 **在`class`外部**表示只作用于文件内部，外部无权访问。(Only be visible to that `.cpp` file.)
 
 **在`class`内部**，`static`成员独立于所有实例，为`class`中的唯一存在，需要以该类的全局变量来声明。
+
 ```c++
 class A
 {
@@ -49,6 +50,7 @@ int A::y;
 ## Virtual Functions
 
 虚函数引入动态绑定，通过虚函数表（虚表，vtable，位于内存分区的**常量区**）来实现编译。虚表包含对基类中所有虚函数的映射（保存虚函数地址），对于有虚函数的类，编译器在编译阶段会自动生成属于该类的虚表。
+
 ```c++
 #include <iotream>
 #include <string>
@@ -81,6 +83,7 @@ int main()
     PrintName(p); // Player is an Entity, 打印"Lyle"
 }
 ```
+
 在含有虚函数的类对象被实例化时，对象地址的前4个字节存储指向虚表的指针vptr。
 调用关系：`this`->vptr->vtable->virtual function。
 
@@ -97,6 +100,7 @@ int main()
 
 纯虚函数只有定义没有实现，需要子类具体实现（需要实例化的类在继承时必须重写纯虚函数，对其进行实现）。
 包含纯虚函数的类只能被当作接口，称为**interface/抽象类**。
+
 ```c++
 #include <iostream>
 #include <string>
@@ -138,6 +142,7 @@ int main()
     PrintClassName(p); // "Player"
 }
 ```
+
 **作用：** 如上面的`PrintClassName()`函数所示，通过定义`Printable`抽象类作为接口，保证了相应的子类有对其纯虚函数的重写，从而保证相应方法能够被调用，无视实际`class`类型。
 
 对于析构函数为纯虚析构函数的抽象类，其每一个派生类析构函数会被编译器加以扩张，以静态调用的方式调用其每一个虚基类以及上一层基类的析构函数。因此强制了每一次继承都必须定义析构函数。
@@ -148,6 +153,7 @@ visibility的主要作用在于设定类的使用规则，避免带来复杂性�
 
 `class`成员默认为`private`，`struct`成员默认为`public`。
 `class`内部函数可以访问`private`或者`protected`成员，但子类只能访问父类的`protected`成员，无法访问其`private`成员。
+
 ```c++
 #include <iostream>
 
@@ -228,6 +234,7 @@ int main()
 ## Const
 
 `const` variable
+
 ```c++
 #include <iostream>
 
@@ -240,14 +247,15 @@ int main()
 
     *a = 2;
     a = (int*)&MAX_SIZE;
-    *b = 2; // 编译出错, 内容为const, 无法改写
+    *b = 2; // 编译出错, 内容为const, 无法改写
     b = (int*)&MAX_SIZE; // 正确
     *c = 2; // 正确
-    c = (int*)&INT_SIZE; // 编译出错, 地址为const, 无法改写
+    c = (int*)&INT_SIZE; // 编译出错, 地址为const, 无法改写
 }
 ```
 
 `const` method
+
 ```c++
 #include <iostream>
 
@@ -259,8 +267,8 @@ private:
 public:
     int GetX() const // 此处const表示const方法
     {
-        var = 2; // 被mutable标记的变量即使在const方法中依然可被改写
-        return m_X; // 其他变量为只读
+        var = 2; // 被mutable标记的变量即使在const方法中依然可被改写
+        return m_X; // 其他变量为只读
     }
 
     void SetX(int x)
@@ -272,7 +280,7 @@ public:
 void PrintEntity(const Entity& e)
 {
     std::cout << e.GetX() << std::endl;
-    // const实例只能调用const方法, 此处若GetX()为非const方法则编译出错
+    // const实例只能调用const方法, 此处若GetX()为非const方法则编译出错
 }
 
 int main()
@@ -283,6 +291,7 @@ int main()
 ```
 
 关于`mutable`，除上述使用情况以外，较常见的还有lambda函数传值时的使用：
+
 ```c++
 int main()
 {
@@ -296,7 +305,9 @@ int main()
     // x: 8
 }
 ```
+
 此处`mutable`相当于
+
 ```c++
 int main()
 {
@@ -316,6 +327,7 @@ int main()
 `constexpr`表示*constant expression*，基本概念与`const`一致，但`constexpr`可以用来声明构造函数，并在可能的情况下，要求编译器在编译阶段进行初始化。
 
 虽然在运行前初始化有助于提升性能，但`constexpr`有很多限制，比如不能用来修饰虚函数（编译阶段无法决定），有虚基类的子类的构造函数不能为`constexpr`等。
+
 ```c++
 constexpr float x = 42.0;
 constexpr float y{108};
@@ -337,7 +349,9 @@ public:
     Example(): a(0), b(0.8) {}
 };
 ```
+
 此处`Example()`构造函数从结果上等价于
+
 ```c++
 Example()
 {
@@ -345,6 +359,7 @@ Example()
     b = 0.8;
 }
 ```
+
 使用初始化列表的构造函数**显示的初始化类的成员**；反之则是**对类成员赋值**而没有进行显示的初始化。因此会有性能差异。
 
 对非内置类型成员变量，为了避免两次构造，推荐使用类构造函数初始化列表。但有的时候必须用带有初始化列表的构造函数：
@@ -360,6 +375,7 @@ Example()
 - **用户定义类型（类类型）**: 结果上相同，但是性能上存在很大的差别。因为类类型的数据成员对象在进入函数体前已经构造完成，也就是说在成员初始化列表处进行构造对象的工作，调用构造函数，在进入函数体之后，进行的是对已经构造好的类对象的赋值，又调用个拷贝赋值操作符才能完成（如果并未提供，则使用编译器提供的默认按成员赋值行为）。
 
 对用户定义类型，例如
+
 ```c++
 struct Node
 {
@@ -369,7 +385,9 @@ struct Node
     Node(int x): val(x) {}
 };
 ```
+
 能在类类型的数据成员对象进入函数体前就将其构造完成。
+
 ```c++
 class Example
 {
@@ -385,12 +403,14 @@ public:
     Example(): a(0), node(Node(0)) /* or node(0) */ {} // faster
 }
 ```
+
 **注意:** 构造顺序应与声明顺序一致<!--（取决于编译器）-->。
 
 ## 实例化 Creating Instantiate Objects
 
 区别于`Java`或`C#`（默认只能heap），`C++`的类在由stack和heap管理的内存上均可实例化。
 在stack上构造实例性能上优于heap，在作用域结束时（scope外）相应内存会被自动释放。
+
 ```c++
 #include <iostream>
 #include <string>
@@ -433,7 +453,9 @@ int main()
     delete e; // 需要手动释放
 }
 ```
+
 必须在heap上构造的两种情况：
+
 - 需要于**作用域外时**依然生效（need to control the life time）。
 - **实例占用较大内存时**: stack的容量通常较小（1MB～2MB，取决于编译器和平台）。
 
@@ -442,6 +464,7 @@ int main()
 `new`是一个operator，在heap上分配内存，与`C`中的`malloc()`有相同行为，但是`new`调用了构造函数。
 
 相对的，通过`new`构造的实例一般情况需要使用`delete`来释放，`delete`与`C`中的`free()`有相同行为，但是调用了`destructor`。
+
 ```c++
 int main()
 {
@@ -460,6 +483,7 @@ int main()
 ## 隐式转换 Implicit Conversion and `explicit` Keyword
 
 编译器允许构造实例时通过构造函数进行**一次**隐式转换。
+
 ```c++
 #include <iostream>
 #include <string>
@@ -495,6 +519,7 @@ int main()
 ## Operator Overloading
 
 `C++`允许类对操作符（如`+`，`-`，`*`，`/`，`==`等）进行重载。
+
 ```c++
 #include <iostream>
 
@@ -563,6 +588,7 @@ int main()
 
 如果要声明函数为一个类的友元，需要在类定义中该函数原型前使用`friend` keyword；
 如果要声明一个类的友元类，则需要在该类的定义中放置友元类的声明，如下所示：
+
 ```c++
 #include <iostream>
 
@@ -660,6 +686,7 @@ void PrintEntity(Entity* e)
 本质是在stack上分配的指针，在scope结束时会自动调用对象的destructor。因此使用`unique_ptr`构造实例时，在使用`new`在heap上构造的同时无需调用`delete`来手动释放内存。
 
 同样也是这个原因，为了防止memory leak，`unique_ptr`无法被拷贝。
+
 ```c++
 #include <iostream>
 #include <string>
@@ -716,6 +743,7 @@ int main()
 shared pointer通过reference counting实现，构造时会额外分配一块内存给control block用于保存reference counting, 可以被赋值or拷贝。
 
 而shared pointer赋值or拷贝给weak pointer时不会增加reference counting。
+
 ```c++
 int main()
 {
@@ -787,6 +815,7 @@ int main()
 ```
 
 **解决办法:** 这也是强弱智能指针的一个重要应用规则：定义对象时，用强智能指针`shared_ptr`，在其它地方引用对象时，使用弱智能指针`weak_ptr`。
+
 ```c++
 #include <iostream>
 #include <memory>
@@ -838,6 +867,7 @@ int main()
 当类成员有指针时，默认的拷贝构造函数只能实现浅拷贝，只拷贝相应的指针并使其指向相同的一块内存。
 这种情况下，两个对象被析构时会调用两次析构函数，而作为成员变量的指针指向的内存也会被释放两次，释放不属于自己的内存导致程序崩溃。
 以一个自定义实现的`String`类为例：
+
 ```c++
 #include <iostream>
 
@@ -900,6 +930,7 @@ int main()
 
 函数和类中都可引入模板，函数模板的实例化是由编译程序在处理函数调用时自动完成的，而类模板的实例化必须由程序员在程序中显式地指定。
 两者都是在编译时生成额外的代码（编译前可视为不存在，取决于编译器）。
+
 ```c++
 #include <iostream>
 #include <string>
@@ -934,6 +965,7 @@ int main()
 ## 函数指针
 
 函数指针可以使程序访问CPU指令的地址（内存分区中的**代码区**），命名方式为`return_type(*name)(parameter_type)`。
+
 ```c++
 #include <iostream>
 
@@ -956,6 +988,7 @@ int main()
 ```
 
 **函数指针的作用:** 将函数作为其他函数（比如API中的函数）的入参，Lambda函数的应用场景。
+
 ```c++
 #include <iostream>
 #include <vector>
@@ -1072,6 +1105,7 @@ int main()
 ### `std::move()` 函数
 
 转移变量的值，移动语义。通过将对象cast成临时变量（右值引用），使得相应的类对象通过移动构造函数被实例化。
+
 ```c++
 #include <string>
 #include <vector>
@@ -1083,3 +1117,139 @@ std::vector<std::string> vec;
 vec.push_back(foo); // copy, foo仍然是"foo-string"
 vec.push_back(std::move(bar)); // move, bar为空（未赋值状态）
 ```
+
+## Type Puning
+
+利用`C`系语言的类型系统，我们可以强制编译器以不同方式去理解内存中的同一块区域，这种强制转换的方式不改变对象实际的二进制表示，称为**Type Puning**。
+
+```c++
+#include <iostream>
+
+int main()
+{
+    int a = 50;
+    double d = a;
+    std::cout << d << std::endl; // 50.0, 此处为一般的类型转换, 编译器自动改变了对应二进制的表示, 使最终的值不变
+
+    double d_pun = *(double*)&a;
+    std::cout << d_pun << std::endl; // -9.25596e+61, 值改变但二进制表示不变
+
+    return 0;
+}
+```
+
+**注意：**type puning对象为引用的情况下存在风险，尤其当尝试解释所需要的内存不属于原对象时。例如：
+
+```c++
+double& d_pun = *(double*)&a;
+d_pun = 0.0; // 尝试写入8 Byte而原对象仅持有4 Byte, run time error
+```
+
+**作用：**在合法的情况下将结构体等其他类型（内存分布与数组一致）以数组的方式读取。在想要创建一个包含结构体所有数据的数组时，type puning可以直接将原对象作为数组而无需额外时空开销（整个过程仅生成一个指针）。
+
+```c++
+#include <iostream>
+
+struct Entity
+{
+    int x, y;
+
+    int* GetPosition()
+    {
+        return &x;
+    }
+};
+
+int main()
+{
+    Entity e = {5, 8};
+    int* pos = (int*)&e;
+
+    std::cout << pos[0] << ", " << pos[1] << std::endl; // 5, 8
+
+    // more intuitively,
+    pos = e.GetPosition();
+    pos[1] = 10;
+
+    return 0;
+}
+```
+
+上述过程实际上与`C++`中的`reinterpret_cast`做了一样的事。
+
+### `union`
+
+当对象允许以不同方式被读取（以不同方式理解同一段内存）时，`union`可用于定义其允许的类型理解方式。允许匿名定义，但匿名无法声明内部函数。
+
+```c++
+#include <iostream>
+
+struct Union
+{
+    union
+    {
+        float a;
+        int b;
+        // a和b占用同一段内存
+    };
+};
+
+int main()
+{
+    Union u;
+    u.a = 2.0f;
+
+    std::cout << u.a << ", " << u.b << std::endl; // 2, 1073741824
+
+    return 0;
+}
+```
+
+**作用：**当我们需要以某种结构体或者类的方式去读取一个其他不同的结构体或者类时，通过定义`union`可在不创建类对象的情况下完成读取。
+
+```c++
+#include <iostream>
+
+struct Vec2
+{
+    float x, y;
+};
+
+struct Vec4
+{
+    // float x, y, z, w; // normal case
+    union
+    {
+        struct
+        {
+            float x, y, z, w;
+        };
+        struct
+        {
+            Vec2 a, b;
+        };
+    };
+};
+
+void PrintVec2(const Vec2& vec)
+{
+    std::cout << vec.x << ", " << vec.y << std::endl;
+}
+
+int main()
+{
+    Vec4 vec = {1.0f, 2.0f, 3.0f, 4.0f};
+    PrintVec2(vec.a); // 以vec2形式读取
+
+    vec.w = 5.0f; // 以vec4形式读取
+    PrintVec2(vec.b); // 3, 5
+
+    return 0;
+}
+```
+
+### `static_cast`与`dynamic_cast`
+
+所做的操作与`C` style cast相同，除了合法性检查以外无其他额外的操作。虽有略微性能开销，但相较于`C` style cast以及type puning更安全。
+
+`static_cast`在非法情况下无法通过编译，而`dynamic_cast`在非法情况下返回一个`nullptr`。
