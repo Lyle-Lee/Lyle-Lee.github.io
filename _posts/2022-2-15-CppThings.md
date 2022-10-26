@@ -1175,8 +1175,6 @@ int main()
 }
 ```
 
-上述过程实际上与`C++`中的`reinterpret_cast`做了一样的事。
-
 ### `union`
 
 当对象允许以不同方式被读取（以不同方式理解同一段内存）时，`union`可用于定义其允许的类型理解方式。允许匿名定义，但匿名无法声明内部函数。
@@ -1248,8 +1246,137 @@ int main()
 }
 ```
 
+## `C++` Style Type Casting
+
+所做的操作与`C` style cast相同，除了合法性检查（complie / run time checking）以外无其他额外的操作。
+虽有略微性能开销，但相较于`C` style cast以及type puning更安全。
+
 ### `static_cast`与`dynamic_cast`
 
-所做的操作与`C` style cast相同，除了合法性检查以外无其他额外的操作。虽有略微性能开销，但相较于`C` style cast以及type puning更安全。
+`static_cast`在非法情况下无法通过编译（compile time checking），而`dynamic_cast`应用RTTI（Run Time Type Info），在非法情况下返回一个`nullptr`。
 
-`static_cast`在非法情况下无法通过编译，而`dynamic_cast`在非法情况下返回一个`nullptr`。
+```c++
+#include <iostream>
+
+class Base {};
+
+class Derived : private Base { // Inherited private/protected not public
+};
+
+int main()
+{
+	Derived d;
+	Base* b = (Base*)(&d); // allowed
+	Base* b1 = static_cast<Base*>(&d); // compile error: 'Base' is an inaccessible base of 'Derived'
+
+	return 0;
+}
+```
+
+`dynamic_cast`以多态为前提。
+
+```c++
+#include <iostream>
+
+class Entity
+{
+public:
+    virtual void PrintName() {} // for generating vTable
+};
+
+class Player : public Entity {};
+
+class Enemy : public Entity {};
+
+int main()
+{
+    Entity* e_player = new Player();
+    Entity* e_enemy = new Enemy();
+
+    Player* p1 = (Player*)e_enemy; // allowed but dangerous
+    Player* p2 = static_cast<Player*>(e_enemy); // allowed but dangerous
+
+    // 只有在运行时通过RTTI, 才能确认一个Entity类型指针实际指向那个类型
+    Player* p3 = dynamic_cast<Player*>(e_enemy); // nullptr
+    Player* p4 = dynamic_cast<Player*>(e_player); // legal, p4 != nullptr
+}
+```
+
+**作用：**虽然有run time性能开销，但`dynamic_cast`可以检测多态情况下的cast是否合法，使代码更鲁棒。
+
+### `const_cast`
+
+将`const`对象cast成non-`const`对象。
+
+```c++
+#include <iostream>
+
+class student
+{
+private:
+	int roll;
+public:
+	// constructor
+	student(int r): roll(r) {}
+
+	// A const function that changes roll with the help of const_cast
+	void fun() const
+	{
+		(const_cast<student*>(this))->roll = 5;
+	}
+
+	int getRoll() { return roll; }
+};
+```
+
+若在cast之后尝试修改该对象则属于undefined behavior。
+
+```c++
+#include <iostream>
+
+int func1(int* ptr)
+{
+	return (*ptr + 10);
+}
+
+int func2(int* ptr)
+{
+    *ptr = *ptr + 10;
+    return (*ptr);
+}
+
+int main()
+{
+	const int val = 10;
+	const int *ptr = &val;
+
+	int *ptr1 = const_cast<int*>(ptr);
+	std::cout << func1(ptr1); // 20
+
+    func2(ptr1); // undefined behavior
+
+	return 0;
+}
+```
+
+与`static_cast`同样提供complie time checking。
+
+```c++
+#include <iostream>
+
+int main(void)
+{
+	int a = 40;
+	const int* b = &a;
+	char* c = const_cast<char*>(b); // compiler error
+	*c = 'A';
+
+	return 0;
+}
+```
+
+若对象为`const volatile`属性则`volatile`属性也将被一并去除。
+
+### `reinterpret_cast`
+
+`C++` style type puning。
