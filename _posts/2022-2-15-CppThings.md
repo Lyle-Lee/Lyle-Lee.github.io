@@ -221,7 +221,7 @@ public:
 
 int main()
 {
-    char* name = "Lyle"; // 默认为 const char* name = "Lyle";
+    char* name = "Lyle"; // 默认为 const char* name = "Lyle";
     name[0] = 'l';
     std::cout << name << std::endl; // 执行出错(undefined behavior), 修改read-only memory
 
@@ -230,6 +230,8 @@ int main()
     std::cout << name << std::endl; // 正确
 }
 ```
+
+**注意：**`std::string`默认构造时为heap allocation。
 
 ## Const
 
