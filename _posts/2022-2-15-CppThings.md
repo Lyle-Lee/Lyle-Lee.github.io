@@ -1017,7 +1017,7 @@ int main()
 
 ## Moving Semantics 移动赋值操作 移动构造函数
 
-构造对象时产生的临时变量默认通过拷贝的方式传递给成员变量，此时调用拷贝构造函数会产生额外的性能开销，通过定义移动构造函数及引动赋值操作符能够避免不必要的拷贝。
+构造对象时产生的临时变量默认通过拷贝的方式传递给成员变量，此时调用拷贝构造函数会产生额外的性能开销，通过定义移动构造函数及移动赋值操作符能够避免不必要的拷贝。
 
 ```c++
 #include <iostream>
@@ -1101,6 +1101,26 @@ int main()
     Entity e2 = Entity(String("Lyle")); // 避免了调用拷贝构造函数, 从而通过减少一次内存分配来提升性能
     // "Created" "Moved" "Destroyed"
     e2.PrintName(); // "Lyle"
+}
+```
+
+**注意：**移动赋值操作符需要在移动构造函数的基础上（在执行移动之前）加上释放自身持有内存的操作，否则移动之后由于原对象已被实例化，该实例所持有的内存将造成内存泄漏。
+
+```c++
+String& operator=(String&& other) noexcept // 移动赋值操作符
+{
+    if (this != &other) // 应避免移动自身, 否则被移动的数据将提前被释放, 该行为本身也没有意义
+    {
+        delete[] m_Buffer;
+
+        m_Size = other.m_Size;
+        m_Buffer = other.m_Buffer;
+
+        other.m_Size = 0;
+        other.m_Buffer = nullptr;
+    }
+
+    return *this;
 }
 ```
 
