@@ -69,4 +69,4 @@ extension ViewController: SubViewDelegate {
 
 最后附上一个应用实例[Real Time Weather](https://github.com/Lyle-Lee/RealTimeWeather)
 
-如果对你有帮助的话，**Star**✨下一吧！
+如果对你有帮助的话，**Star**✨一下吧！
